@@ -1,8 +1,8 @@
 /******************************************************************************
- * main.cpp
+ * meminfo.h
  * Copyright 2010 Iain Peet
  *
- * Statusled daemon main entry point.
+ * Obtains some basic memory utilization information from /proc/meminfo
  ******************************************************************************
  * This program is distributed under the of the GNU Lesser Public License. 
  *
@@ -20,48 +20,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <termios.h>
+#ifndef MEMINFO_H_
+#define MEMINFO_H_
 
 #include <iostream>
-#include <iomanip>
 
-#include "cpustat.h"
-#include "meminfo.h"
+class Meminfo {
+public:
+    long m_total;
+    long m_free;
+    long m_buffers;
+    long m_cached;
 
-using namespace std;
+public:
+    // Read current memory utilization data from /proc/meminfo 
+    int update();
 
-int main(int argc, char *argv[])
-{
-    CPUStat cpustat;
-    if(cpustat.update()) {
-        cerr <<  "Failed to obtain cpu utilization." << endl;
-    }
+    /* Fraction of memory currently in use.  
+     * NB: We don't consider cache and buffer memory 'used' */
+    double getUtilization();
 
-    Meminfo meminfo;
-    if(meminfo.update()) {
-        cerr << "Failed to obtain memory utilization." << endl;
-    }
+private:
+    // Read from a stream until a newline is consumed
+    void clearLine(std::istream& stream);
+};
 
-    cout << setprecision(3);
-    while(1) {
-        sleep(1);
-
-        cpustat.update();
-        cout << "Total: " << setw(5) << cpustat.totalDiff().getUtilization() * 100 << "%";
-        for(int i=0; i<cpustat.cpuCount(); ++i) {
-            cout << " CPU " << i << ": ";
-            cout << setw(5) << cpustat.cpuDiff(i).getUtilization() * 100 << "%";
-        }
-
-        meminfo.update();
-        cout << " Mem: " << meminfo.getUtilization() * 100 << "%";
-
-        cout << endl;
-    }
-    return 0;
-}
+#endif // MEMINFO_H_
 

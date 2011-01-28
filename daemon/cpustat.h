@@ -26,16 +26,19 @@
 #include <vector>
 #include <iostream>
 
-/* The various classes of utilization provided in /proc/stat */
+/* Container for the various types of CPU jiffies accounted in
+ * /proc/stat.  This class may store jiffies for a particular CPU,
+ * or for all CPUs.  It may store total jiffies since startup,
+ * or the deltas between successive reads of /proc/stat. */
 class CPUUtilization {
 public:
-    long user;
-    long nice;
-    long system;
-    long idle;
-    long iowait;
-    long irq;
-    long softirq;
+    long m_user;
+    long m_nice;
+    long m_system;
+    long m_idle;
+    long m_iowait;
+    long m_irq;
+    long m_softirq;
 
     CPUUtilization();
     CPUUtilization(const CPUUtilization& other);
@@ -44,36 +47,49 @@ public:
     friend std::ostream& operator<<(const CPUUtilization& cpu, std::ostream & stream);
 
     long getTotal() 
-        { return user+nice+system+idle+iowait+irq+softirq; }
+        { return m_user+m_nice+m_system+m_idle+m_iowait+m_irq+m_softirq; }
+    // Total non-m_idle time, as a fraction in the range [0,1] :
     double getUtilization();
 };
 
+/* Class for obtaining CPU utilization information from /proc/stat.
+ * /proc/stat is read by calling the update() function.  */
 class CPUStat {
 private:
     // The total utilization of all cpus since startup:
-    CPUUtilization allCPUTotal;
-    // The change in allCPUTotal between the last two updates.
-    CPUUtilization allCPUDiff;
+    CPUUtilization m_allCPUTotal;
+    // The change in m_allCPUTotal between the last two updates.
+    CPUUtilization m_allCPUDiff;
 
     // The total utilization of each CPU at last update:
-    std::vector<CPUUtilization> cpuTotals;
+    std::vector<CPUUtilization> m_cpuTotals;
     // The change in each CPU's utilization between the last two updates
-    std::vector<CPUUtilization> cpuDiffs;
+    std::vector<CPUUtilization> m_cpuDiffs;
 
 public:
+    /* Obtain new utilization info from /proc/stat
+     * Utilization diffs will be calculated from the data read on the
+     * last call to update().  (The first call to update() will give
+     * diffs relative to 0).
+     * @return  0 on success, -1 on failure */
     int update();
 
     int cpuCount()
-        { return cpuTotals.size(); }
+        { return m_cpuTotals.size(); }
 
+    // Total utilization of all CPUs since startup
     CPUUtilization& total()
-        { return allCPUTotal; }
+        { return m_allCPUTotal; }
+    // Change in total utilization between last two updates
     CPUUtilization& totalDiff()
-        { return allCPUDiff; }
+        { return m_allCPUDiff; }
+    // Utilization for a particular CPU since startup
     CPUUtilization& cpu(int cpu)
-        { return cpuTotals[cpu]; }
+        { return m_cpuTotals[cpu]; }
+    // Change in utilization for a particualr CPU between last two updates
     CPUUtilization& cpuDiff(int cpu)
-        { return cpuDiffs[cpu]; }
+        { return m_cpuDiffs[cpu]; }
 };
 
 #endif //CPUSTAT_H_
+

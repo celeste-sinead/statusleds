@@ -5,8 +5,9 @@ CFLAGS=-O0 -g -Wall -Wextra
 INCLUDES=
 LIBS=
 
-SOURCES=main.cpp \
-        cpustat.cpp
+SOURCES=cpustat.cpp \
+        main.cpp \
+        meminfo.cpp \
 
 OUTPUT=statusledsd
 
