@@ -5,15 +5,16 @@ CFLAGS=-O0 -g -Wall -Wextra
 INCLUDES=
 LIBS=
 
-SOURCES=main.c
+SOURCES=main.cpp \
+        cpustat.cpp
 
 OUTPUT=statusledsd
 
 all: $(OUTPUT)
 
-OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
+OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
 
-$(OBJECTS): $$(patsubst %.o,%.c,$$@)
+$(OBJECTS): $$(patsubst %.o,%.cpp,$$@)
 	$(CXX) $(CFLAGS) $(INCLUDES) $< -c -o $@
 
 $(OUTPUT): $(OBJECTS)
