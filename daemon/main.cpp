@@ -29,6 +29,7 @@
 #include <iostream>
 #include <iomanip>
 
+#include "main.h"
 #include "cpustat.h"
 #include "meminfo.h"
 
@@ -64,4 +65,13 @@ int main(int argc, char *argv[])
     }
     return 0;
 }
+
+void clearLine(std::istream& stream)
+{
+    char ch;
+    do {
+        stream.get(ch);
+    } while( (!stream.eof()) && (ch != '\n') );
+}
+
 

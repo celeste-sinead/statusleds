@@ -1,8 +1,8 @@
 /******************************************************************************
- * meminfo.h
- * Copyright 2010 Iain Peet
+ * main.h
+ * Copyright 2011 Iain Peet
  *
- * Obtains some basic memory utilization information from /proc/meminfo
+ * Declare a few application globals.
  ******************************************************************************
  * This program is distributed under the of the GNU Lesser Public License. 
  *
@@ -20,27 +20,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *****************************************************************************/
 
-#ifndef MEMINFO_H_
-#define MEMINFO_H_
+#ifndef MAIN_H_
+#define MAIN_H_
 
 #include <iostream>
 
-class Meminfo {
-public:
-    long m_total;
-    long m_free;
-    long m_buffers;
-    long m_cached;
+// Read from a stream until a newline is consumed
+void clearLine(std::istream& stream);
 
-public:
-    // Read current memory utilization data from /proc/meminfo 
-    int update();
-
-    /* Fraction of memory currently in use.  
-     * NB: We don't consider cache and buffer memory 'used' */
-    double getUtilization();
-
-};
-
-#endif // MEMINFO_H_
+#endif // MAIN_H_
 

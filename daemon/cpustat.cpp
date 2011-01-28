@@ -20,9 +20,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *****************************************************************************/
 
-#include <stdio.h>
+#include <string>
+#include <iostream>
+#include <fstream>
 
 #include "cpustat.h"
+#include "main.h"
 
 using namespace std;
 
@@ -89,24 +92,22 @@ ostream& operator<<(ostream& stream, const CPUUtilization& cpu)
 
 int CPUStat::update() 
 {
-    FILE* procstat = fopen("/proc/stat","r");
-    if(!procstat) {
-        perror("fopen");
-        return -1;
-    }
+    fstream procStat ("/proc/stat", ios_base::in);
 
     /* Read the total cpu utilization data */
     CPUUtilization newTotal;
-    int fieldsRead = fscanf(procstat, "cpu %ld %ld %ld %ld %ld %ld %ld %*d %*d", 
-            &newTotal.m_user,
-            &newTotal.m_nice,
-            &newTotal.m_system,
-            &newTotal.m_idle,
-            &newTotal.m_iowait,
-            &newTotal.m_irq,
-            &newTotal.m_softirq);
-    if( fieldsRead != 7 ) {
-        cerr << "Reading cpu total: expected 7 fields but found " << fieldsRead << endl;
+    string cpuname;
+    procStat >> cpuname;  // (ignored)
+    procStat >> newTotal.m_user;
+    procStat >> newTotal.m_nice;
+    procStat >> newTotal.m_system;
+    procStat >> newTotal.m_idle;
+    procStat >> newTotal.m_iowait;
+    procStat >> newTotal.m_irq;
+    procStat >> newTotal.m_softirq;
+    clearLine(procStat);
+    if(procStat.fail()) {
+        cerr << "Parse error reading total CPU utilization" << endl;
         return -1;
     }
 
@@ -118,16 +119,21 @@ int CPUStat::update()
     CPUUtilization curCpu;
     for(size_t i = 0; 1; ++i) {
         /* Read the cpu data */
-        fieldsRead = fscanf(procstat, " cpu%*d %ld %ld %ld %ld %ld %ld %ld %*d %*d",
-            &curCpu.m_user, 
-            &curCpu.m_nice,
-            &curCpu.m_system,
-            &curCpu.m_idle,
-            &curCpu.m_iowait,
-            &curCpu.m_irq,
-            &curCpu.m_softirq);
-        if(fieldsRead != 7) {
-            // scanf failed means we're beyond the cpu data
+        procStat >> cpuname; // (ignored)
+        if( cpuname.find("cpu") == string::npos ) {
+            //First token in line doesn't contain 'cpu', we've read all cpu data
+            break;
+        }
+        procStat >> curCpu.m_user; 
+        procStat >> curCpu.m_nice;
+        procStat >> curCpu.m_system;
+        procStat >> curCpu.m_idle;
+        procStat >> curCpu.m_iowait;
+        procStat >> curCpu.m_irq;
+        procStat >> curCpu.m_softirq;
+        clearLine(procStat);
+        if(procStat.fail()) {
+            cerr << "Parse error reading CPU " << i << " utilization." << endl;
             break;
         }
        

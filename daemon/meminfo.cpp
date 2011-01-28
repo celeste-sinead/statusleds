@@ -25,6 +25,7 @@
 #include <string>
 
 #include "meminfo.h"
+#include "main.h"
 
 using namespace std;
 
@@ -64,14 +65,6 @@ double Meminfo::getUtilization()
 {
     double used = m_total - m_free - m_buffers - m_cached;
     return used / m_total;
-}
-
-void Meminfo::clearLine(std::istream& stream)
-{
-    char ch;
-    do {
-        stream.get(ch);
-    } while( (!stream.eof()) && (ch != '\n') );
 }
 
 
