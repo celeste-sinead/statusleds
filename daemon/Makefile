@@ -5,7 +5,8 @@ CFLAGS=-O0 -g -Wall -Wextra
 INCLUDES=
 LIBS=
 
-SOURCES=cpustat.cpp \
+SOURCES=blinky.cpp \
+        cpustat.cpp \
         main.cpp \
         meminfo.cpp \
 

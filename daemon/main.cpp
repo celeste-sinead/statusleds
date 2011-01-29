@@ -20,18 +20,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <termios.h>
-
 #include <iostream>
 #include <iomanip>
 
 #include "main.h"
 #include "cpustat.h"
 #include "meminfo.h"
+#include "blinky.h"
 
 using namespace std;
 
@@ -47,21 +42,43 @@ int main(int argc, char *argv[])
         cerr << "Failed to obtain memory utilization." << endl;
     }
 
+    Blinky blinky("/dev/ttyUSB0");
+    if( ! blinky.ready() ) {
+        cerr << "Failed to open blinky device." << endl;
+    }
+    if( ! blinky.isBlinky() ) {
+        cerr << "Blinky is not a blinky." << endl;
+    } else {
+        cout << "Successfully opened communications with blinky!" << endl;
+    }
+    blinky.setLEDs(0);
+
     cout << setprecision(3);
     while(1) {
-        sleep(1);
+        usleep(500 * 1000);
 
         cpustat.update();
-        cout << "Total: " << setw(5) << cpustat.totalDiff().getUtilization() * 100 << "%";
+        cout << "\rTotal: " << setw(5) << cpustat.totalDiff().getUtilization() * 100 << "%";
         for(int i=0; i<cpustat.cpuCount(); ++i) {
             cout << " CPU " << i << ": ";
             cout << setw(5) << cpustat.cpuDiff(i).getUtilization() * 100 << "%";
         }
 
+        /* If 2 cores, we use both green LEDs for load.  Otherwise, we use both
+         * and set them to total system utilization */
+        if(cpustat.cpuCount() == 2) {
+            blinky.setLED(5, cpustat.cpuDiff(0).getUtilization());
+            blinky.setLED(4, cpustat.cpuDiff(1).getUtilization());
+        } else {
+            blinky.setLED(5, cpustat.totalDiff().getUtilization());
+            blinky.setLED(4, cpustat.totalDiff().getUtilization());
+        }
+
         meminfo.update();
         cout << " Mem: " << meminfo.getUtilization() * 100 << "%";
+        blinky.setLED(3, meminfo.getUtilization());
 
-        cout << endl;
+        cout << flush;
     }
     return 0;
 }
