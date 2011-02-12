@@ -31,7 +31,7 @@ void handleLine(char* line);
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   
   for(int i=2; i<=13; ++i) {
     pinMode(i, OUTPUT);
