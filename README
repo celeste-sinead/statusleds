@@ -7,3 +7,6 @@ specific.
 Currently only CPU and Memory usage are displayed (and you need to modify 
 source to change which LEDs, or if you have more than 2 cores), but I do
 intend to eventually add hard disk / network activity as well.
+
+The Arduino wiring is painfully simple: all 6 PWM outputs are used, you
+just need to connect LEDs to them.
