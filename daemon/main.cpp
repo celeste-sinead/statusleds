@@ -22,6 +22,11 @@
 
 #include <iostream>
 #include <iomanip>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "main.h"
 #include "cpustat.h"
@@ -30,8 +35,73 @@
 
 using namespace std;
 
+// Fork a child, close inherited files, blah blah blah
+int daemonize() {
+    int ret = fork();
+    if (ret < 0) {
+        // Fork failed.
+        return ret;
+    }
+    if (ret > 0) {
+        // This is parent, exit now.
+        exit(0);
+    }
+
+    /* Child process logic */
+    umask(0);
+
+    int sid = setsid();  // separate from parent.
+    if (sid < 0) {
+        // Failed to separate.
+        return -1;
+    }
+
+    /* Redirect standard I/O to null */
+    freopen("/dev/null", "r", stdin);
+    freopen("/dev/null", "w", stdout);
+    freopen("/dev/null", "w", stderr);
+
+    return 0;
+}
+
+// Print usage message
+void usage(const char *bin) {
+    cout << "Usage:" << endl;
+    cout << bin << " [-f] -p port" << endl;
+    cout << "-f  Run in foreground" << endl;
+    cout << "-p  Specify serial port to use to commmunicate with blinky" << endl;
+}
+
 int main(int argc, char *argv[])
 {
+    /* Parse args */
+    bool shouldDaemonize = true;
+    char* blinkyPort = 0;
+    for (int i=1; i < argc; ++i) {
+        if (strcmp("-f", argv[i]) == 0) {
+            shouldDaemonize = false;
+        } else if (strcmp("-p", argv[i]) == 0) {
+            if (i+1 >= argc) {
+                usage(argv[0]);
+                exit(1);
+            }
+            blinkyPort = argv[++i];
+        } else {
+            usage(argv[0]);
+            exit(1);
+        }
+    }
+
+    if (!blinkyPort) {
+        usage(argv[0]);
+        exit(1);
+    }
+    
+    if (shouldDaemonize && daemonize()) {
+        cerr << "Failed to daemonize.  Exiting." << endl;
+        exit(1);
+    }
+
     CPUStat cpustat;
     if(cpustat.update()) {
         cerr <<  "Failed to obtain cpu utilization." << endl;
@@ -42,7 +112,7 @@ int main(int argc, char *argv[])
         cerr << "Failed to obtain memory utilization." << endl;
     }
 
-    Blinky blinky("/dev/ttyUSB0");
+    Blinky blinky(blinkyPort);
     if( ! blinky.ready() ) {
         cerr << "Failed to open blinky device." << endl;
     }
